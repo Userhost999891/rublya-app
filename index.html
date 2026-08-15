@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Rublya — rosyjski od zera do swobody</title>
+<meta name="description" content="Kurs rosyjskiego dla Polaków: ponad 1500 słówek, gramatyka, tłumaczenie zdań w obie strony, powtórki rozłożone w czasie i trener klawiatury ЙЦУКЕН.">
+
+<!-- instalacja jako aplikacja -->
+<link rel="manifest" href="manifest.webmanifest?v=16">
+<meta name="theme-color" content="#070a0f">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Rublya">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=16">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png?v=16">
+
+<link rel="stylesheet" href="css/app.css?v=16">
+<link rel="stylesheet" href="css/cartoon.css?v=16">
+</head>
+<body>
+
+<script>
+/* Motyw ustawiamy przed pierwszym malowaniem, żeby na ciemnym systemie
+   nie mrugnęło białe tło. Wybór użytkownika przychodzi później z bazy
+   i nadpisuje tę wstępną decyzję. */
+document.documentElement.dataset.theme =
+  matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+/* Safari na iPhonie nie nadaje stanu :active przy dotknięciu, dopóki
+   na dokumencie nie wisi choćby pusty nasłuch dotyku. Bez tego żaden
+   przycisk się nie wciska — palec naciska, a nic się nie rusza. */
+document.addEventListener('touchstart', function () {}, { passive: true });
+</script>
+
+<noscript>
+  <div style="padding:40px;font-family:system-ui;color:#eceae4">
+    <h1>Potrzebny jest JavaScript</h1>
+    <p>Ta aplikacja liczy postępy i układa powtórki w przeglądarce. Włącz JavaScript i odśwież stronę.</p>
+  </div>
+</noscript>
+
+<!-- dane -->
+<script src="js/data/00-core.js?v=16"></script>
+<script src="js/data/01-fundament.js?v=16"></script>
+<script src="js/data/02-codzienne.js?v=16"></script>
+<script src="js/data/03-swiat.js?v=16"></script>
+<script src="js/data/04-praca-czas.js?v=16"></script>
+<script src="js/data/05-dzialanie.js?v=16"></script>
+<script src="js/data/06-zywy.js?v=16"></script>
+<script src="js/data/07-wiecej.js?v=16"></script>
+<script src="js/data/10-gramatyka.js?v=16"></script>
+<script src="js/data/11-sciagawki.js?v=16"></script>
+<script src="js/data/12-sciezka.js?v=16"></script>
+<script src="js/data/13-zdania.js?v=16"></script>
+<script src="js/data/14-sklep.js?v=16"></script>
+<script src="js/data/15-klawiatura.js?v=16"></script>
+<script src="js/data/16-tlumaczenia.js?v=16"></script>
+
+<!-- aplikacja -->
+<script src="js/ui.js?v=16"></script>
+<script src="js/api.js?v=16"></script>
+<script src="js/store.js?v=16"></script>
+<script src="js/auth.js?v=16"></script>
+<script src="js/speech.js?v=16"></script>
+<script src="js/app.js?v=16"></script>
+<script src="js/views2.js?v=16"></script>
+<script src="js/views3.js?v=16"></script>
+
+<script>
+/* Service worker działa tylko po HTTP(S) — przy otwarciu pliku z dysku
+   aplikacja po prostu chodzi bez trybu offline, zamiast rzucać błędem.
+
+   Nowa wersja workera musi wchodzić od razu. Wcześniej stary potrafił
+   trzymać się miesiącami i podawać nieaktualny kod — telefon z ikoną
+   na ekranie głównym rzadko kiedy zamyka wszystkie karty, a bez tego
+   następca nigdy nie dochodził do głosu. */
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  var bylKontroler = !!navigator.serviceWorker.controller;
+  var przeladowano = false;
+
+  navigator.serviceWorker.addEventListener('controllerchange', function () {
+    /* Pierwsze przejęcie po instalacji to nie jest aktualizacja —
+       przeładowujemy tylko wtedy, gdy poprzednik ustąpił miejsca. */
+    if (!bylKontroler || przeladowano) return;
+    przeladowano = true;
+    location.reload();
+  });
+
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').then(function (reg) {
+      reg.update();
+      reg.addEventListener('updatefound', function () {
+        var nowy = reg.installing;
+        if (!nowy) return;
+        nowy.addEventListener('statechange', function () {
+          if (nowy.state === 'installed' && navigator.serviceWorker.controller) {
+            nowy.postMessage('przejmij');
+          }
+        });
+      });
+    }).catch(function () {});
+  });
+}
+</script>
+
+</body>
+</html>

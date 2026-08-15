@@ -1,0 +1,22 @@
+# ============================================================
+#  Czego NIE wrzucamy na GitHub
+# ============================================================
+
+# Baza z kontami. Zawiera hashe haseł i cały postęp nauki —
+# to są dane osobowe użytkowników, nie kod. Nigdy do repozytorium.
+server/data/
+*.db
+*.db-wal
+*.db-shm
+
+# Zależności, gdyby ktoś doinstalował better-sqlite3
+node_modules/
+
+# Wersja jednoplikowa jest wynikiem budowania, nie źródłem.
+# Powstaje ze skryptu zbuduj-jeden-plik.ps1
+Rosyjski-jeden-plik.html
+
+# Śmieci systemowe
+Thumbs.db
+desktop.ini
+.DS_Store

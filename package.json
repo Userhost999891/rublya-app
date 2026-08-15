@@ -1,0 +1,15 @@
+{
+  "name": "rublya",
+  "version": "2.0.0",
+  "description": "Rublya — kurs rosyjskiego dla polskiego użytkownika, z kontami i postępem w bazie SQLite",
+  "private": true,
+  "type": "commonjs",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "lan": "node server/server.js --lan"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  }
+}
