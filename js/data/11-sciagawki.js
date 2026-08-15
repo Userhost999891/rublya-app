@@ -1,0 +1,217 @@
+/* ============================================================
+   ŚCIĄGAWKI — teoria do podejrzenia w każdej chwili
+   Bloki: p (akapit), rule (zasada), table (tabela), pairs (zestawienie)
+   ============================================================ */
+
+window.REFS = [
+  {
+    id: 'alphabet',
+    title: 'Cyrylica bez bólu',
+    tag: 'Alfabet',
+    lead: 'Trzydzieści trzy litery. Trzynaście wygląda i brzmi jak po polsku, siedem to fałszywe znajome, reszta jest nowa.',
+    blocks: [
+      { t: 'pairs', title: 'Fałszywe znajome — wyglądają jak łacińskie, czytamy inaczej', items: [
+        ['В', 'W', 'wода = woda'],
+        ['Н', 'N', 'нос = nos'],
+        ['Р', 'R', 'рука = ręka'],
+        ['С', 'S', 'сын = syn'],
+        ['У', 'U', 'утро = utro'],
+        ['Х', 'CH', 'хлеб = chleb'],
+        ['Я', 'JA', 'я = ja'],
+      ]},
+      { t: 'pairs', title: 'Nowe kształty', items: [
+        ['Ж', 'Ż', 'жить = żyć'],
+        ['З', 'Z', 'зима = zima'],
+        ['Ц', 'C', 'цена = cena'],
+        ['Ч', 'CZ', 'час = czas'],
+        ['Ш', 'SZ', 'школа = szkoła'],
+        ['Щ', 'SZCZ', 'щи = szczi'],
+        ['Ю', 'JU', 'юг = jug'],
+        ['Ё', 'JO', 'ёж = jeż'],
+        ['Ы', 'Y', 'мы = my'],
+        ['Э', 'E', 'это = eto'],
+      ]},
+      { t: 'rule', title: 'Ь i Ъ nie mają własnego dźwięku', body: 'Ь (miękki znak) zmiękcza poprzednią spółgłoskę — дверь brzmi jak „dwier”. Ъ (twardy znak) rozdziela — объяснить to „ab-jasnit”, nie „abiasnit”.' },
+    ],
+  },
+  {
+    id: 'conj',
+    title: 'Dwie koniugacje',
+    tag: 'Czasownik',
+    lead: 'Cały czas teraźniejszy sprowadza się do wyboru: końcówki z Е czy z И.',
+    blocks: [
+      { t: 'table', title: 'I koniugacja — читать (czytać)', head: ['Osoba', 'Forma', 'Końcówka'], rows: [
+        ['я', 'читаю', '-ю / -у'],
+        ['ты', 'читаешь', '-ешь'],
+        ['он / она', 'читает', '-ет'],
+        ['мы', 'читаем', '-ем'],
+        ['вы', 'читаете', '-ете'],
+        ['они', 'читают', '-ют / -ут'],
+      ]},
+      { t: 'table', title: 'II koniugacja — говорить (mówić)', head: ['Osoba', 'Forma', 'Końcówka'], rows: [
+        ['я', 'говорю', '-ю / -у'],
+        ['ты', 'говоришь', '-ишь'],
+        ['он / она', 'говорит', '-ит'],
+        ['мы', 'говорим', '-им'],
+        ['вы', 'говорите', '-ите'],
+        ['они', 'говорят', '-ят / -ат'],
+      ]},
+      { t: 'rule', title: 'Pułapka -еть', body: 'Bezokolicznik na -еть zwykle znaczy I koniugację, ale смотреть, видеть, слышать i зависеть odmieniają się jak II. Trzeba je znać na pamięć — nie ma tu reguły.' },
+    ],
+  },
+  {
+    id: 'mut',
+    title: 'Wymiany spółgłosek',
+    tag: 'Czasownik',
+    lead: 'Wymiana zachodzi TYLKO w formie „я” drugiej koniugacji. Pozostałe osoby zostają nietknięte — dokładnie jak w polskim.',
+    blocks: [
+      { t: 'table', title: 'Wzorce wymian', head: ['Wymiana', 'Bezokolicznik', 'Forma я', 'Polska paralela'], rows: [
+        ['д → ж', 'ходить', 'хожу', 'chodzić → chodzę'],
+        ['т → ч', 'платить', 'плачу', 'płacić → płacę'],
+        ['с → ш', 'просить', 'прошу', 'prosić → proszę'],
+        ['з → ж', 'возить', 'вожу', 'wozić → wożę'],
+        ['ст → щ', 'чистить', 'чищу', 'czyścić → czyszczę'],
+        ['б → бл', 'любить', 'люблю', 'lubić → lubię'],
+        ['п → пл', 'купить', 'куплю', 'kupić → kupię'],
+        ['в → вл', 'готовить', 'готовлю', 'gotować → gotuję'],
+        ['м → мл', 'кормить', 'кормлю', 'karmić → karmię'],
+        ['ф → фл', 'графить', 'графлю', '(rzadkie)'],
+      ]},
+      { t: 'rule', title: 'Test na wymianę', body: 'Zapytaj: czy to II koniugacja i czy mówię o sobie? Jeśli dwa razy tak — wymieniasz. ты ходишь, он ходит, мы ходим: bez zmian.' },
+    ],
+  },
+  {
+    id: 'irreg',
+    title: 'Piątka nieregularnych',
+    tag: 'Czasownik',
+    lead: 'Pięć czasowników, które łamią zasady, a używa się ich codziennie.',
+    blocks: [
+      { t: 'table', title: 'хотеть — chcieć (mieszany!)', head: ['Osoba', 'Forma'], rows: [
+        ['я', 'хочу'], ['ты', 'хочешь'], ['он', 'хочет'],
+        ['мы', 'хотим'], ['вы', 'хотите'], ['они', 'хотят'],
+      ]},
+      { t: 'rule', title: 'Dlaczego mieszany', body: 'Liczba pojedyncza idzie jak I koniugacja (хочу, хочешь), liczba mnoga jak II (хотим, хотят). Jedyny taki czasownik w języku.' },
+      { t: 'table', title: 'есть — jeść', head: ['Osoba', 'Forma'], rows: [
+        ['я', 'ем'], ['ты', 'ешь'], ['он', 'ест'],
+        ['мы', 'едим'], ['вы', 'едите'], ['они', 'едят'],
+      ]},
+      { t: 'table', title: 'пить — pić', head: ['Osoba', 'Forma'], rows: [
+        ['я', 'пью'], ['ты', 'пьёшь'], ['он', 'пьёт'],
+        ['мы', 'пьём'], ['вы', 'пьёте'], ['они', 'пьют'],
+      ]},
+      { t: 'table', title: 'жить — żyć, mieszkać', head: ['Osoba', 'Forma'], rows: [
+        ['я', 'живу'], ['ты', 'живёшь'], ['он', 'живёт'],
+        ['мы', 'живём'], ['вы', 'живёте'], ['они', 'живут'],
+      ]},
+      { t: 'table', title: 'мочь — móc', head: ['Osoba', 'Forma'], rows: [
+        ['я', 'могу'], ['ты', 'можешь'], ['он', 'может'],
+        ['мы', 'можем'], ['вы', 'можете'], ['они', 'могут'],
+      ]},
+      { t: 'rule', title: 'Klucz do пить i мочь', body: 'пить: я i они mają Ю (пью, пьют), reszta Ё. мочь: я i они mają Г (могу, могут), reszta Ж.' },
+    ],
+  },
+  {
+    id: 'cases',
+    title: 'Sześć przypadków',
+    tag: 'Rzeczownik',
+    lead: 'Masz je już w głowie — polski ma te same sześć plus wołacz. Zmieniają się tylko końcówki.',
+    blocks: [
+      { t: 'table', title: 'Wzór odmiany', head: ['Przypadek', 'Pytanie', 'кот (m)', 'книга (ż)', 'окно (n)'], rows: [
+        ['Именительный', 'kto? co?', 'кот', 'книга', 'окно'],
+        ['Родительный', 'kogo? czego?', 'кота', 'книги', 'окна'],
+        ['Дательный', 'komu? czemu?', 'коту', 'книге', 'окну'],
+        ['Винительный', 'kogo? co?', 'кота', 'книгу', 'окно'],
+        ['Творительный', 'kim? czym?', 'котом', 'книгой', 'окном'],
+        ['Предложный', 'o kim? o czym?', 'о коте', 'о книге', 'об окне'],
+      ]},
+      { t: 'rule', title: 'Żywotność w bierniku', body: 'Rodzaj męski żywotny: biernik = dopełniacz (вижу кота). Nieżywotny: biernik = mianownik (вижу стол). Polski działa identycznie — widzę kota, widzę stół.' },
+      { t: 'rule', title: 'Предложный zawsze z przyimkiem', body: 'Nigdy nie występuje sam. Zawsze po в, на, о, при — dlatego nazywa się „przyimkowym”.' },
+    ],
+  },
+  {
+    id: 'pron',
+    title: 'Zaimki i zasada Н-',
+    tag: 'Zaimek',
+    lead: 'Odmiana jak w polskim, plus jeden haczyk, którego polski nie ma.',
+    blocks: [
+      { t: 'table', title: 'Zaimki osobowe', head: ['', 'я', 'ты', 'он', 'она', 'мы', 'вы', 'они'], rows: [
+        ['Dop. / Bier.', 'меня', 'тебя', 'его', 'её', 'нас', 'вас', 'их'],
+        ['Celownik', 'мне', 'тебе', 'ему', 'ей', 'нам', 'вам', 'им'],
+        ['Narzędnik', 'мной', 'тобой', 'им', 'ей', 'нами', 'вами', 'ими'],
+        ['Miejscownik', 'мне', 'тебе', 'нём', 'ней', 'нас', 'вас', 'них'],
+      ]},
+      { t: 'rule', title: 'Zasada Н-', body: 'Po przyimku он / она / они dostają na początku н-. Bez przyimka: Я вижу его. Z przyimkiem: У него есть кот. Podobnie ей → к ней, их → у них.' },
+      { t: 'pairs', title: 'Dzierżawcze', items: [
+        ['мой / моя / моё / мои', 'mój', 'odmienia się'],
+        ['твой / твоя / твоё / твои', 'twój', 'odmienia się'],
+        ['наш / наша / наше / наши', 'nasz', 'odmienia się'],
+        ['ваш / ваша / ваше / ваши', 'wasz', 'odmienia się'],
+        ['его', 'jego', 'NIE odmienia się'],
+        ['её', 'jej', 'NIE odmienia się'],
+        ['их', 'ich', 'NIE odmienia się'],
+      ]},
+    ],
+  },
+  {
+    id: 'num',
+    title: 'Liczby 1–1000',
+    tag: 'Liczebnik',
+    lead: 'Regularne poza dwoma wyjątkami, które trzeba po prostu zapamiętać.',
+    blocks: [
+      { t: 'table', title: 'Podstawa', head: ['Cyfra', 'Rosyjski', 'Wymowa'], rows: [
+        ['1', 'один', 'a-DIN'], ['2', 'два', 'DWA'], ['3', 'три', 'TRI'],
+        ['4', 'четыре', 'czi-TY-rie'], ['5', 'пять', 'PIAT'], ['6', 'шесть', 'SZEST'],
+        ['7', 'семь', 'SIEM'], ['8', 'восемь', 'WO-siem'], ['9', 'девять', 'DIE-wit'],
+        ['10', 'десять', 'DIE-sit'],
+      ]},
+      { t: 'table', title: 'Dziesiątki', head: ['Liczba', 'Rosyjski', 'Uwaga'], rows: [
+        ['20', 'двадцать', 'wzór: два + дцать'],
+        ['30', 'тридцать', 'wzór'],
+        ['40', 'сорок', 'WYJĄTEK — nie „четыредцать”'],
+        ['50', 'пятьдесят', 'wzór'],
+        ['60', 'шестьдесят', 'wzór'],
+        ['70', 'семьдесят', 'wzór'],
+        ['80', 'восемьдесят', 'wzór'],
+        ['90', 'девяносто', 'WYJĄTEK — nie „девятьдесят”'],
+        ['100', 'сто', ''],
+        ['1000', 'тысяча', ''],
+      ]},
+      { t: 'rule', title: 'Rodzaj przy 1 i 2', body: 'один / одна / одно zgadza się z rzeczownikiem. два dla rodzaju męskiego i nijakiego, две dla żeńskiego: два стола, две книги.' },
+    ],
+  },
+  {
+    id: 'sound',
+    title: 'Jak to brzmi naprawdę',
+    tag: 'Wymowa',
+    lead: 'Rosyjski pisze się inaczej, niż się mówi. Pięć zasad załatwia większość różnic.',
+    blocks: [
+      { t: 'pairs', title: 'Redukcja i ubezdźwięcznienie', items: [
+        ['о bez akcentu → a', 'молоко', 'ma-ła-KO'],
+        ['е bez akcentu → i', 'телефон', 'ti-li-FON'],
+        ['в przed głuchą → f', 'вкусный', 'FKUS-nyj'],
+        ['д przed głuchą → t', 'сладкий', 'SŁAT-kij'],
+        ['dźwięczna na końcu → głucha', 'хлеб', 'CHLEP'],
+      ]},
+      { t: 'rule', title: 'Akcent zmienia wszystko', body: 'Rosyjski akcent jest ruchomy i nieprzewidywalny. Zawsze ucz się słowa razem z akcentem — w tej aplikacji zaznaczony jest WIELKIMI LITERAMI w transkrypcji.' },
+      { t: 'rule', title: 'ж, ш, ц są zawsze twarde', body: 'Nawet jeśli po nich stoi и albo е — жизнь czytamy „żyzń”, а цирк jako „cyrk”.' },
+    ],
+  },
+  {
+    id: 'aspect',
+    title: 'Aspekt: zrobiłem czy robiłem',
+    tag: 'Czasownik',
+    lead: 'Największa przewaga Polaka nad resztą świata — masz to samo w swoim języku.',
+    blocks: [
+      { t: 'table', title: 'Pary aspektowe', head: ['Niedokonany', 'Dokonany', 'Polski'], rows: [
+        ['читать', 'прочитать', 'czytać / przeczytać'],
+        ['писать', 'написать', 'pisać / napisać'],
+        ['делать', 'сделать', 'robić / zrobić'],
+        ['смотреть', 'посмотреть', 'oglądać / obejrzeć'],
+        ['говорить', 'сказать', 'mówić / powiedzieć'],
+        ['брать', 'взять', 'brać / wziąć'],
+        ['покупать', 'купить', 'kupować / kupić'],
+      ]},
+      { t: 'rule', title: 'Kiedy który', body: 'Niedokonany = proces, powtarzalność, tło (Я читал книгу — czytałem). Dokonany = wynik, jednorazowość (Я прочитал книгу — przeczytałem). Czasownik dokonany nie ma czasu teraźniejszego.' },
+    ],
+  },
+];

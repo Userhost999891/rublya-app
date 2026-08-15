@@ -1,0 +1,21 @@
+# Baza z kontami zostaje na Twoim dysku — do obrazu nie wchodzi nigdy.
+# W chmurze powstaje pusta, na dysku trwałym.
+server/data/
+*.db
+*.db-wal
+*.db-shm
+
+node_modules/
+.git/
+.gitignore
+
+# Skrypty dla Windows nie mają czego szukać w kontenerze na Linuksie
+*.bat
+*.ps1
+
+# Wynik budowania wersji jednoplikowej
+Rosyjski-jeden-plik.html
+
+Thumbs.db
+desktop.ini
+.DS_Store

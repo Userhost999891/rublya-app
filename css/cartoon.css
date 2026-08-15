@@ -1,0 +1,725 @@
+/* ============================================================
+   CARTOON — kształty
+
+   Paleta i kroje siedzą w app.css. Tutaj są rzeczy, które robią
+   z tego zabawkę: wciskane przyciski, karty wycięte z grubego
+   papieru, pola z wgłębieniem i przełącznik dnia na noc.
+
+   Kolejność wczytania: ten plik idzie po app.css i celowo
+   nadpisuje jego kształty.
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   RUBIK — jeden krój na łacinkę, polskie ogonki i cyrylicę
+
+   Plik zmienny: jedna waga od 400 do 800 zamiast pięciu osobnych
+   plików. Podzielony na zestawy znaków, więc przeglądarka pobiera
+   cyrylicę dopiero, gdy zobaczy pierwsze rosyjskie słowo.
+   ------------------------------------------------------------ */
+
+@font-face {
+  font-family: 'Rubik';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('../fonts/rubik-cyrillic-ext.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+@font-face {
+  font-family: 'Rubik';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('../fonts/rubik-cyrillic.woff2') format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+  font-family: 'Rubik';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('../fonts/rubik-latin-ext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Rubik';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('../fonts/rubik-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Rubik jest krojem o dużej wysokości x — przy tej samej wielkości
+   czyta się większy niż poprzedni szeryf, więc nagłówki mogą zejść
+   nieco niżej, a odstępy międzyliterowe ściągamy. */
+body { font-weight: 500; letter-spacing: -0.005em; }
+h1, h2, h3, .cat-name, .prompt-word, .brand-mark { letter-spacing: -0.02em; }
+
+/* Poświata pod panelem startowym była pomyślana na czarne tło.
+   Na jasnym gruncie robi brudną plamę, więc ją gasimy. */
+:root:not([data-theme="dark"]) body::before { opacity: 0.35; }
+
+/* ============================================================
+   ZACHOWANIE JAK W APLIKACJI, NIE JAK NA STRONIE
+
+   Trzy odruchy przeglądarki zdradzają, że to jednak witryna:
+   zaznaczanie napisów przy dłuższym dotknięciu, szara poświata
+   pod palcem i obwódka zostająca na klikniętym przycisku.
+   Wszystkie trzy wyłączamy.
+   ============================================================ */
+
+* {
+  -webkit-tap-highlight-color: transparent;   /* szary błysk pod palcem */
+  -webkit-touch-callout: none;                /* menu „kopiuj / szukaj" po przytrzymaniu */
+}
+
+body {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Wyjątek pierwszy: pola, w których się pisze. Blokada zaznaczania
+   potrafi w nich uniemożliwić poprawianie własnego tekstu — nie da się
+   zaznaczyć literówki, żeby ją nadpisać. */
+input, textarea, [contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Wyjątek drugi: miejsca, z których kopiuje się treść. Czytelnia służy
+   do wklejania i czytania cudzych tekstów, notatki do własnych zapisków,
+   a ze słownika wyciąga się pojedyncze słowa. Odbieranie tam zaznaczania
+   zabrałoby funkcję, nie ozdobę. */
+.readtext, .note-title, .note-body, table td, table th {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Obwódka zostaje wyłącznie dla klawiatury. `:focus-visible` zapala się
+   przy sterowaniu tabulatorem, a milczy przy dotknięciu i kliknięciu —
+   dzięki temu przycisk nie zostaje podświetlony po naciśnięciu, ale osoba
+   poruszająca się po aplikacji z klawiatury nadal wie, gdzie jest. */
+:focus { outline: none; }
+:focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* ------------------------------------------------------------
+   PRZYCISKI — wciskane
+
+   Wzór: Uiverse.io / PriyanshuGupta28. Oryginał składa przycisk
+   z trzech warstw (cień, krawędź, front). Tutaj ten sam efekt robi
+   jeden box-shadow, bo przycisków są w aplikacji setki i wszystkie
+   powstają w JS — dokładanie im po trzy divy oznaczałoby przepisanie
+   dziewięciu plików. Krzywe i czasy zostawiam oryginalne: wyjście
+   powolne, wciśnięcie natychmiastowe.
+   ------------------------------------------------------------ */
+
+.btn {
+  --btn-face: var(--card);
+  --btn-edge: var(--border-2);
+  --btn-ink: var(--ink);
+
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 22px;
+  background: var(--btn-face);
+  color: var(--btn-ink);
+  border: none;
+  border-radius: var(--r-ctl);
+  box-shadow: 0 var(--push) 0 var(--btn-edge);
+  font-family: var(--ui);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transform: translateY(0);
+  transition: transform 600ms var(--push-out), box-shadow 600ms var(--push-out), filter 250ms;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.btn:hover {
+  filter: brightness(1.06);
+  transform: translateY(-2px);
+  box-shadow: 0 calc(var(--push) + 2px) 0 var(--btn-edge);
+  transition: transform 250ms var(--push-in), box-shadow 250ms var(--push-in), filter 250ms;
+}
+
+/* Wciśnięcie musi być natychmiastowe — każda zwłoka czyta się
+   jako zacięcie interfejsu, nie jako animacja. */
+.btn:active {
+  transform: translateY(var(--push));
+  box-shadow: 0 0 0 var(--btn-edge);
+  transition: transform 34ms, box-shadow 34ms;
+}
+
+.btn:focus-visible {
+  outline: 3px solid var(--brand);
+  outline-offset: 3px;
+}
+.btn:focus:not(:focus-visible) { outline: none; }
+
+.btn.primary { --btn-face: var(--brand); --btn-edge: var(--brand-deep); --btn-ink: var(--on-brand); }
+.btn.danger  { --btn-face: var(--bad);   --btn-edge: var(--bad-deep);   --btn-ink: var(--on-brand); }
+.btn.go      { --btn-face: var(--ok);    --btn-edge: var(--ok-deep);    --btn-ink: var(--on-brand); }
+
+/* Wariant pusty — bez podstawy, żeby akcje drugorzędne nie krzyczały */
+.btn.ghost {
+  --btn-face: transparent;
+  --btn-edge: transparent;
+  --btn-ink: var(--ink-dim);
+  box-shadow: inset 0 0 0 2px var(--border);
+}
+.btn.ghost:hover { background: var(--card-2); box-shadow: inset 0 0 0 2px var(--border-2); transform: none; }
+.btn.ghost:active { transform: translateY(2px); }
+
+.btn.sm { padding: 9px 15px; font-size: 12.5px; --push: 3px; }
+
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; filter: none; }
+
+/* ------------------------------------------------------------
+   KARTY — wycięte z grubego papieru
+   ------------------------------------------------------------ */
+
+.card, .cat, .tile, .prompt, .verdict, .now, .summary {
+  border-radius: var(--r-card);
+  border: 2px solid var(--border);
+  box-shadow: var(--sh-2);
+}
+
+.prompt, .now, .summary { border-radius: var(--r-panel); }
+
+/* Karty kategorii dają się nacisnąć jak przyciski */
+.cat {
+  background: var(--card);
+  transition: transform 250ms var(--push-out), box-shadow 250ms var(--push-out), border-color 200ms;
+}
+.cat:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 7px 0 var(--border-2);
+  border-color: var(--border-2);
+}
+.cat:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--border-2);
+  transition: transform 34ms, box-shadow 34ms;
+}
+
+.tile { background: var(--card); }
+
+/* Paski postępu — grube, z wyraźnym torem */
+.bar {
+  height: 14px;
+  border-radius: 999px;
+  background: rgb(var(--well-rgb) / 0.55);
+  overflow: hidden;
+  border: none;
+}
+.bar > i {
+  border-radius: 999px;
+  box-shadow: inset 0 -3px 0 rgb(0 0 0 / 0.12);
+}
+
+/* ------------------------------------------------------------
+   POLA — z wgłębieniem
+
+   Wzór karty logowania: Uiverse.io / Smit-Prajapati.
+   ------------------------------------------------------------ */
+
+.typebox input,
+.tr-answer textarea,
+.gate-field input,
+input[type="text"], input[type="password"], textarea, select {
+  background: var(--card);
+  border: 2px solid transparent;
+  border-radius: var(--r-ctl);
+  box-shadow: 0 6px 0 -2px rgb(var(--well-rgb) / 0.45), inset 0 2px 5px rgb(var(--well-rgb) / 0.3);
+  color: var(--ink);
+  transition: border-color 200ms var(--ease), box-shadow 200ms var(--ease);
+}
+
+.typebox input:focus,
+.tr-answer textarea:focus,
+.gate-field input:focus,
+input[type="text"]:focus, input[type="password"]:focus, textarea:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 6px 0 -2px rgb(var(--brand-rgb) / 0.35), inset 0 2px 5px rgb(var(--well-rgb) / 0.2);
+}
+
+.typebox input.good, .tr-answer textarea.good { border-color: var(--ok); }
+.typebox input.bad,  .tr-answer textarea.bad  { border-color: var(--bad); }
+
+/* Klawiatury ekranowe — klawisze też się wciskają */
+.keyb button, .tr-kb button, .kbkey {
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-bottom-width: 4px;
+  border-radius: 10px;
+  color: var(--ink-dim);
+  font-weight: 600;
+  transition: transform 60ms, border-bottom-width 60ms;
+}
+.keyb button:active, .tr-kb button:active {
+  transform: translateY(2px);
+  border-bottom-width: 2px;
+  background: var(--brand-wash);
+  color: var(--brand);
+}
+
+/* Kafelki układacza zdań */
+.tile-w {
+  background: var(--card);
+  border: 2px solid var(--border);
+  border-bottom-width: 4px;
+  border-radius: 12px;
+  color: var(--ink);
+  font-weight: 600;
+}
+.tile-w:active { transform: translateY(2px); border-bottom-width: 2px; }
+
+/* ------------------------------------------------------------
+   BRAMA — karta logowania
+
+   Wzór: Uiverse.io / Smit-Prajapati. Zaokrąglenie, biała ramka
+   i błękitna poświata pod spodem przeniesione wprost; barwy idą
+   przez tokeny, żeby karta działała też po zmroku.
+   ------------------------------------------------------------ */
+
+.gate-box {
+  background: linear-gradient(0deg, var(--card) 0%, var(--card-2) 100%);
+  border-radius: 40px;
+  border: 5px solid var(--card);
+  box-shadow: rgb(var(--brand-rgb) / 0.35) 0px 30px 30px -20px, 0 0 0 1px var(--border);
+  padding: 30px 32px 26px;
+}
+
+.gate-title { font-weight: 800; color: var(--brand); }
+.gate-brand .brand-mark { color: var(--ink); }
+
+.gate-field input {
+  border-radius: 20px;
+  padding: 15px 20px;
+}
+.gate-submit {
+  border-radius: 20px;
+  background: linear-gradient(45deg, var(--brand-deep) 0%, var(--brand) 100%);
+  color: var(--on-brand);
+  font-weight: 800;
+  padding-block: 15px;
+  box-shadow: 0 var(--push) 0 var(--brand-deep);
+}
+
+/* Poświata za kartą — na jasnym motywie ma być ledwo widoczna */
+:root:not([data-theme="dark"]) .gate-glow {
+  background: radial-gradient(circle, rgb(var(--brand-rgb) / 0.18), transparent 62%);
+}
+
+/* ------------------------------------------------------------
+   PRZEŁĄCZNIK DNIA I NOCY
+
+   Wzór: Uiverse.io / Galahhad — przeniesiony bez zmian w budowie.
+   Zmniejszony przez --toggle-size, bo oryginalne 30px daje kontrolkę
+   szeroką na 168 px, a ta ma siedzieć w karcie ustawień.
+   ------------------------------------------------------------ */
+
+.theme-switch {
+  --toggle-size: 15px;
+  --container-width: 5.625em;
+  --container-height: 2.5em;
+  --container-radius: 6.25em;
+  --container-light-bg: #3D7EAE;
+  --container-night-bg: #1D1F2C;
+  --circle-container-diameter: 3.375em;
+  --sun-moon-diameter: 2.125em;
+  --sun-bg: #ECCA2F;
+  --moon-bg: #C4C9D1;
+  --spot-color: #959DB1;
+  --circle-container-offset: calc((var(--circle-container-diameter) - var(--container-height)) / 2 * -1);
+  --stars-color: #fff;
+  --clouds-color: #F3FDFF;
+  --back-clouds-color: #AACADF;
+  --transition: .5s cubic-bezier(0, -0.02, 0.4, 1.25);
+  --circle-transition: .3s cubic-bezier(0, -0.02, 0.35, 1.17);
+
+  display: inline-block;
+  flex: 0 0 auto;
+}
+
+.theme-switch, .theme-switch *, .theme-switch *::before, .theme-switch *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-size: var(--toggle-size);
+}
+
+.theme-switch__container {
+  width: var(--container-width);
+  height: var(--container-height);
+  background-color: var(--container-light-bg);
+  border-radius: var(--container-radius);
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0em -0.062em 0.062em rgba(0, 0, 0, 0.25), 0em 0.062em 0.125em rgba(255, 255, 255, 0.94);
+  transition: var(--transition);
+  position: relative;
+}
+
+.theme-switch__container::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  box-shadow: 0em 0.05em 0.187em rgba(0, 0, 0, 0.25) inset, 0em 0.05em 0.187em rgba(0, 0, 0, 0.25) inset;
+  border-radius: var(--container-radius);
+}
+
+.theme-switch__checkbox { display: none; }
+
+.theme-switch__circle-container {
+  width: var(--circle-container-diameter);
+  height: var(--circle-container-diameter);
+  background-color: rgba(255, 255, 255, 0.1);
+  position: absolute;
+  left: var(--circle-container-offset);
+  top: var(--circle-container-offset);
+  border-radius: var(--container-radius);
+  box-shadow: inset 0 0 0 3.375em rgba(255, 255, 255, 0.1), inset 0 0 0 3.375em rgba(255, 255, 255, 0.1), 0 0 0 0.625em rgba(255, 255, 255, 0.1), 0 0 0 1.25em rgba(255, 255, 255, 0.1);
+  display: flex;
+  transition: var(--circle-transition);
+  pointer-events: none;
+}
+
+.theme-switch__sun-moon-container {
+  pointer-events: auto;
+  position: relative;
+  z-index: 2;
+  width: var(--sun-moon-diameter);
+  height: var(--sun-moon-diameter);
+  margin: auto;
+  border-radius: var(--container-radius);
+  background-color: var(--sun-bg);
+  box-shadow: 0.062em 0.062em 0.062em 0em rgba(254, 255, 239, 0.61) inset, 0em -0.062em 0.062em 0em #a1872a inset;
+  filter: drop-shadow(0.062em 0.125em 0.125em rgba(0, 0, 0, 0.25)) drop-shadow(0em 0.062em 0.125em rgba(0, 0, 0, 0.25));
+  overflow: hidden;
+  transition: var(--transition);
+}
+
+.theme-switch__moon {
+  transform: translateX(100%);
+  width: 100%;
+  height: 100%;
+  background-color: var(--moon-bg);
+  border-radius: inherit;
+  box-shadow: 0.062em 0.062em 0.062em 0em rgba(254, 255, 239, 0.61) inset, 0em -0.062em 0.062em 0em #969696 inset;
+  transition: var(--transition);
+  position: relative;
+}
+
+.theme-switch__spot {
+  position: absolute;
+  top: 0.75em;
+  left: 0.312em;
+  width: 0.75em;
+  height: 0.75em;
+  border-radius: var(--container-radius);
+  background-color: var(--spot-color);
+  box-shadow: 0em 0.0312em 0.062em rgba(0, 0, 0, 0.25) inset;
+}
+.theme-switch__spot:nth-of-type(2) { width: 0.375em; height: 0.375em; top: 0.937em; left: 1.375em; }
+.theme-switch__spot:nth-last-of-type(3) { width: 0.25em; height: 0.25em; top: 0.312em; left: 0.812em; }
+
+.theme-switch__clouds {
+  width: 1.25em;
+  height: 1.25em;
+  background-color: var(--clouds-color);
+  border-radius: var(--container-radius);
+  position: absolute;
+  bottom: -0.625em;
+  left: 0.312em;
+  box-shadow: 0.937em 0.312em var(--clouds-color), -0.312em -0.312em var(--back-clouds-color), 1.437em 0.375em var(--clouds-color), 0.5em -0.125em var(--back-clouds-color), 2.187em 0 var(--clouds-color), 1.25em -0.062em var(--back-clouds-color), 2.937em 0.312em var(--clouds-color), 2em -0.312em var(--back-clouds-color), 3.625em -0.062em var(--clouds-color), 2.625em 0em var(--back-clouds-color), 4.5em -0.312em var(--clouds-color), 3.375em -0.437em var(--back-clouds-color), 4.625em -1.75em 0 0.437em var(--clouds-color), 4em -0.625em var(--back-clouds-color), 4.125em -2.125em 0 0.437em var(--back-clouds-color);
+  transition: 0.5s cubic-bezier(0, -0.02, 0.4, 1.25);
+}
+
+.theme-switch__stars-container {
+  position: absolute;
+  color: var(--stars-color);
+  top: -100%;
+  left: 0.312em;
+  width: 2.75em;
+  height: auto;
+  transition: var(--transition);
+}
+
+.theme-switch__checkbox:checked + .theme-switch__container { background-color: var(--container-night-bg); }
+.theme-switch__checkbox:checked + .theme-switch__container .theme-switch__circle-container {
+  left: calc(100% - var(--circle-container-offset) - var(--circle-container-diameter));
+}
+.theme-switch__checkbox:checked + .theme-switch__container .theme-switch__circle-container:hover {
+  left: calc(100% - var(--circle-container-offset) - var(--circle-container-diameter) - 0.187em);
+}
+.theme-switch__circle-container:hover { left: calc(var(--circle-container-offset) + 0.187em); }
+.theme-switch__checkbox:checked + .theme-switch__container .theme-switch__moon { transform: translate(0); }
+.theme-switch__checkbox:checked + .theme-switch__container .theme-switch__clouds { bottom: -4.062em; }
+.theme-switch__checkbox:checked + .theme-switch__container .theme-switch__stars-container {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* ------------------------------------------------------------
+   WEJŚCIE EKRANU
+
+   Pierwotnie ekran gasł do zera na 0,44 s, a karty dochodziły
+   kaskadą z opóźnieniem do 0,43 s i własnym czasem 0,5 s — ostatnia
+   lądowała po blisko sekundzie. Przy nawigacji czytało się to jako
+   ociąganie, a nie jako płynność. Teraz treść nigdy nie znika
+   całkowicie i całość domyka się w jakieś 250 ms.
+   ------------------------------------------------------------ */
+
+.enter { animation-duration: 0.18s; }
+@keyframes viewIn {
+  from { opacity: 0.4; transform: translateY(5px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.stagger > * { animation-duration: 0.22s; }
+@keyframes itemIn {
+  from { opacity: 0.45; transform: translateY(7px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.stagger > *:nth-child(1)  { animation-delay: 0.01s; }
+.stagger > *:nth-child(2)  { animation-delay: 0.03s; }
+.stagger > *:nth-child(3)  { animation-delay: 0.05s; }
+.stagger > *:nth-child(4)  { animation-delay: 0.07s; }
+.stagger > *:nth-child(5)  { animation-delay: 0.08s; }
+.stagger > *:nth-child(n+6) { animation-delay: 0.09s; }
+
+/* Odświeżenie tego samego ekranu ma być niewidoczne. Bez tego karty
+   znikały i wjeżdżały od nowa po każdym drobiazgu w ustawieniach. */
+.bez-wejscia.enter,
+.bez-wejscia .stagger > *,
+.bez-wejscia .grid > * { animation: none; }
+
+/* Oprawa przełącznika w karcie ustawień */
+.motyw { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.motyw-opis { font-size: 13px; color: var(--ink-mute); margin: 6px 0 0; }
+
+/* ------------------------------------------------------------
+   PASEK GÓRNY
+
+   Rubik ma szersze znaki od poprzedniego kroju, więc podpis rangi
+   z numerem poziomu przestał się mieścić i łamał się na dwie linie.
+   ------------------------------------------------------------ */
+
+.hud-xp { min-width: 168px; }
+.hud-xp-top {
+  white-space: nowrap;
+  gap: 12px;
+  font-size: 10.5px;
+  letter-spacing: 0.02em;
+}
+.hud-stat .k { font-weight: 800; }
+.hud-stat .l { font-weight: 600; }
+
+/* Zębatka — jedyne wejście do ustawień, więc musi być widoczna
+   z każdego ekranu i na tyle duża, żeby trafić w nią kciukiem. */
+.hud-gear {
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  background: var(--card-2);
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  color: var(--ink-dim);
+  font-size: 19px;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.25s var(--push-out), border-color 0.2s, color 0.2s;
+}
+.hud-gear:hover { border-color: var(--brand); color: var(--brand); transform: rotate(45deg); }
+.hud-gear:active { transform: rotate(45deg) scale(0.92); }
+
+/* ------------------------------------------------------------
+   TELEFON
+   ------------------------------------------------------------ */
+
+/* Nic nie ma prawa być szersze od swojego pojemnika. Listy rozwijane
+   i obrazki potrafią to zignorować i rozepchnąć układ. */
+select, img, video, canvas { max-width: 100%; }
+select { box-sizing: border-box; }
+
+@media (max-width: 980px) {
+  .btn { padding: 12px 18px; }
+  .theme-switch { --toggle-size: 13px; }
+  .card, .cat, .tile { border-radius: 18px; }
+
+  /* Pasek górny przewija się w bok, a zębatka jest w nim ostatnia —
+     na wąskim ekranie wyjeżdżała poza kadr. Skoro to jedyne wejście
+     do ustawień, musi zostać przyklejona do prawej krawędzi. */
+  .hud-gear {
+    position: sticky;
+    right: 0;
+    z-index: 3;
+    box-shadow: -14px 0 14px -6px var(--bg);
+  }
+}
+
+/* ============================================================
+   TELEFON — pełny przegląd
+
+   Trzy rzeczy decydują o tym, czy aplikacja jest naprawdę pod palec,
+   a nie tylko „mieści się na ekranie":
+
+   1. Pole dotykowe. Poniżej mniej więcej 44 px palec zaczyna chybiać —
+      to nie jest wymysł, tylko rozmiar opuszki. Nawigacja miała 36 px,
+      przyciski 37, a głośnik w słowniku 26 na 26.
+
+   2. Rozmiar pisma. Podpisy w nawigacji stały na 9 px, etykiety
+      kafelków na 10. Na ekranie trzymanym w dłoni to jest szum.
+
+   3. Pola formularzy. Poniżej 16 px iOS przy każdym dotknięciu sam
+      przybliża stronę i już z niej nie odjeżdża. To jeden z tych
+      błędów, których na komputerze nie widać nigdy.
+   ============================================================ */
+
+@media (max-width: 980px) {
+  /* --- Pola dotykowe --- */
+  .btn { min-height: 46px; }
+  /* min-width też, bo przycisk z jednym znakiem — jak „✕" zamykający
+     sesję — schodził poniżej progu samą szerokością. */
+  .btn.sm { min-height: 44px; min-width: 44px; padding: 10px 16px; font-size: 13.5px; }
+  .tr-speak { min-height: 44px; min-width: 52px; }
+  .hud-gear { width: 44px; height: 44px; font-size: 18px; }
+  .nav-item { min-height: 52px; }
+  .theme-switch { --toggle-size: 18px; }
+
+  /* Głośnik w wierszu słownika był 26 na 26 — trafienie w niego palcem
+     graniczyło z przypadkiem. Powiększamy samo pole dotyku, nie ikonę,
+     więc wiersz tabeli nie puchnie. */
+  .speak { min-width: 44px; min-height: 44px; display: inline-grid; place-items: center; }
+  .kbkey { min-height: 40px; }
+  .chip { min-width: 0; display: inline-flex; align-items: center; }
+
+  /* Dolny pasek rośnie razem z pozycjami, więc treść nad nim też */
+  .rail { height: 68px; position: fixed; }
+  .nav { padding: 6px 8px; scroll-behavior: smooth; scroll-padding-inline: 24px; }
+
+  /* Osiem pozycji nie mieści się na raz. Przewijanie działało od zawsze,
+     ale nic o nim nie mówiło — cień przy krawędzi jest jedyną
+     podpowiedzią, że pasek ma ciąg dalszy. */
+  .rail::after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    bottom: 6px;
+    right: 4px;
+    width: 26px;
+    border-radius: 0 16px 16px 0;
+    background: linear-gradient(to right, transparent, var(--card));
+    pointer-events: none;
+  }
+  .nav-item { scroll-snap-align: center; }
+  .main { padding-bottom: calc(90px + env(safe-area-inset-bottom)); }
+  .toasts { bottom: calc(90px + env(safe-area-inset-bottom)); }
+
+  /* --- Rozmiar pisma ---
+     Podpisy w dolnym pasku zostają celowo małe: natywny pasek zakładek
+     iOS używa 10 pt i większa czcionka wyglądałaby tu obco, a przy
+     ośmiu pozycjach zaczęłaby je rozpychać. Liczy się za to pole
+     dotykowe całej pozycji, a to ma wyżej ustawione 52 px. */
+  .nav-item { font-size: 11px; }
+  .nav-badge { font-size: 11px; padding: 0 6px; }
+  .legend span, .cat-stat, .cat-stat span { font-size: 12px; }
+  /* Podpis paska doświadczenia zszedłem wcześniej do 10,5 px, żeby
+     przestał się łamać na dwie linie. Blokada łamania załatwia to sama,
+     a pasek i tak przewija się w bok — więc pismo może wrócić wyżej. */
+  .hud-xp-top { font-size: 11.5px; }
+  .eyebrow { font-size: 12px; }
+  .tile .l, .hud-stat .l { font-size: 12px; }
+  .tile .s { font-size: 12.5px; }
+  .txt, .dim, .badge-desc, .tr-dir-desc, .acct-since, .motyw-opis { font-size: 12.5px; }
+  table th { font-size: 12px; }
+  .kbkey.space { font-size: 12px; }
+
+  /* --- Pola formularzy: 16 px zatrzymuje przybliżanie na iOS ---
+     Selektory muszą dorównać oryginałom, bo `select.sel` czy
+     `.editor textarea` biją zwykłe `select` i `textarea`. */
+  input, textarea, select,
+  .search, #tin, #tra { font-size: 16px; }
+  select.sel { font-size: 16px; min-height: 46px; }
+  .editor input, .editor textarea { font-size: 16px; }
+  .tr-answer textarea { font-size: 18px; }
+
+  /* --- Reszta drobnego pisma, po nazwie takiej jak w oryginale --- */
+  .now-meta .l, .chapter-prog .l, .summary-line .l { font-size: 12px; }
+  .quest-pay .dim { font-size: 12px; }
+  .chip { font-size: 12px; }
+  .ref-block h4, .rule h4 { font-size: 12.5px; }
+  /* Liczba w pierścieniu postępu siedzi w małym kółku — podnosimy ją
+     tylko odrobinę, bo większa przestałaby się w nim mieścić. */
+  .ring .txt { font-size: 11.5px; }
+}
+
+/* ============================================================
+   TELEFON POZIOMO
+
+   Przy 360 px wysokości paski zabierały 128 px, czyli blisko czterdzieści
+   procent ekranu — na ćwiczenie zostawało tyle, że pytanie i odpowiedź
+   nie mieściły się razem. Ściągamy je, ale pola dotykowe zostają
+   pełnowymiarowe.
+
+   W poziomie wcięcie ekranu jest z boku, nie na dole, więc bezpieczne
+   marginesy trzeba brać z lewej i prawej — inaczej treść chowa się pod
+   obiektywem albo pod zaokrągleniem obudowy.
+   ============================================================ */
+
+@media (max-height: 500px) and (orientation: landscape) {
+  .hud { height: 50px; }
+  .rail { height: 56px; bottom: calc(6px + env(safe-area-inset-bottom)); }
+  .nav { padding: 4px 8px; }
+  .nav-item { min-height: 46px; padding: 4px 8px; }
+  .nav-item .ico { font-size: 16px; }
+  .main { padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
+  .toasts { bottom: calc(72px + env(safe-area-inset-bottom)); }
+  .view { padding-top: 18px; padding-bottom: 24px; }
+  .view-head { margin-bottom: 18px; }
+  .view-head h1 { font-size: 26px; }
+
+  /* Wcięcie obudowy leży teraz z boku */
+  .view, .hud { padding-left: max(18px, env(safe-area-inset-left)); padding-right: max(18px, env(safe-area-inset-right)); }
+  .rail { left: max(10px, env(safe-area-inset-left)); right: max(10px, env(safe-area-inset-right)); }
+
+  /* Panel pytania nie może zjadać całej wysokości */
+  .prompt { padding: 20px 22px; margin-bottom: 14px; }
+  .tr-source { font-size: 21px; }
+  .tr-answer textarea { min-height: 56px; }
+}
+
+/* Wąskie telefony — iPhone SE i starsze Androidy mają 320 px */
+@media (max-width: 380px) {
+  .view { padding-left: 14px; padding-right: 14px; }
+  .cat { padding: 16px 15px; }
+  .shop-item { padding: 15px 14px; gap: 12px; }
+  .tile { padding: 15px 14px; }
+  .tile .k { font-size: 27px; }
+  .btn { padding: 11px 15px; font-size: 13px; }
+  .hud { gap: 12px; }
+  /* Nawet na najwęższym ekranie zębatka zostaje w rozmiarze, w który
+     da się trafić — to jedyne wejście do ustawień. */
+  .hud-gear { width: 44px; height: 44px; font-size: 17px; }
+
+  /* Klawisze trenera muszą się zmieścić w rzędzie, a jest ich dwanaście */
+  .kbkey { width: auto; flex: 1 1 0; min-width: 0; max-width: 30px; }
+  .kbrow { gap: 3px; }
+  .kbpad { width: 10px; }
+}

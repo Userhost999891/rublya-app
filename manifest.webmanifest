@@ -1,0 +1,25 @@
+{
+  "name": "Rublya — rosyjski od zera do swobody",
+  "short_name": "Rublya",
+  "description": "Kurs rosyjskiego dla Polaków: ponad 1500 słówek, gramatyka, tłumaczenie zdań, powtórki rozłożone w czasie i trener klawiatury.",
+  "lang": "pl",
+  "dir": "ltr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#070a0f",
+  "theme_color": "#070a0f",
+  "categories": ["education"],
+  "icons": [
+    { "src": "icons/icon-192.png?v=17", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png?v=17", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png?v=17", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Powtórki", "url": "./index.html#/train", "description": "Kolejka kart na dziś" },
+    { "name": "Tłumacz", "url": "./index.html#/translator", "description": "Przekład zdań w obie strony" },
+    { "name": "Zadania dnia", "url": "./index.html#/quests" }
+  ]
+}

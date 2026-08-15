@@ -1,0 +1,36 @@
+# ============================================================
+#  Rublya — wdrożenie na Fly.io
+#
+#  Nazwę aplikacji podmień na własną, jeśli „rublya" będzie zajęta:
+#  `fly launch` sam zaproponuje wolną i wpisze ją tutaj.
+# ============================================================
+
+app = "rublya"
+primary_region = "waw"      # Warszawa — najbliżej Ciebie
+
+[build]
+
+[env]
+  PORT = "8080"
+  # Baza musi leżeć na wolumenie, nie w katalogu aplikacji
+  RP_DB = "/data/rublya.db"
+
+[http_service]
+  internal_port = 8080
+  force_https = true         # HTTPS bez tego nie byłoby wymuszone,
+                             # a bez HTTPS nie ma service workera ani PWA
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  # Zero znaczy: maszyna śpi, gdy nikt nie korzysta, i budzi się na żądanie.
+  # Pierwsze wejście po przerwie trwa kilka sekund dłużej, za to nie płacisz
+  # za bezczynność. Ustaw 1, jeśli wolisz, żeby wchodziło od razu.
+  min_machines_running = 0
+
+# Dysk trwały na bazę. Bez tego każde wdrożenie kasuje wszystkie konta.
+[[mounts]]
+  source = "rublya_dane"
+  destination = "/data"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"           # aplikacja zajmuje kilka MB, to zapas z górką
