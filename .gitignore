@@ -2,14 +2,23 @@
 #  Czego NIE wrzucamy na GitHub
 # ============================================================
 
-# Baza z kontami. Zawiera hashe haseł i cały postęp nauki —
-# to są dane osobowe użytkowników, nie kod. Nigdy do repozytorium.
+# Hasło do bazy MySQL. Najważniejsza linia w tym pliku — bez niej
+# dane dostępowe trafiłyby do publicznego repozytorium przy pierwszym
+# `git add`. Na hostingu te same zmienne ustawia się w panelu usługi.
+.env
+.env.*
+
+!.env.example
+
+# Pozostałość po SQLite. Gdyby stara baza jeszcze leżała na dysku,
+# ma tam zostać: są w niej hashe haseł i cały postęp nauki.
 server/data/
 *.db
 *.db-wal
 *.db-shm
 
-# Zależności, gdyby ktoś doinstalował better-sqlite3
+# Zależności z npm — odtwarzane z package-lock.json, który zostaje
+# w repozytorium, żeby hosting instalował dokładnie te same wersje
 node_modules/
 
 # Wersja jednoplikowa jest wynikiem budowania, nie źródłem.

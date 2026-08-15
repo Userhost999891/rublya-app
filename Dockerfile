@@ -1,29 +1,27 @@
 # ============================================================
 #  Rublya — obraz do wdrożenia
 #
-#  Node 24, bo od tej wersji SQLite jest w standardzie i aplikacja
-#  nie potrzebuje ani jednej paczki z npm. Stąd brak `npm install`
-#  i brak warstwy z zależnościami — obraz to praktycznie sam kod.
+#  Dane leżą w zewnętrznym MySQL, więc obraz jest bezstanowy: można go
+#  wyrzucić i odtworzyć w dowolnej chwili, nic się nie traci. Stąd brak
+#  wolumenów i brak katalogu na bazę.
 #
-#  Baza leży w /data, a nie w folderze aplikacji. To musi być dysk
-#  trwały podpięty przez hosting: katalog obrazu jest kasowany przy
-#  każdym wdrożeniu i konta zniknęłyby razem z nim.
+#  Hasła do bazy w obrazie NIE MA. Przychodzi zmienną środowiskową
+#  MYSQL_URL, ustawianą w panelu hostingu.
 # ============================================================
 
-FROM node:24-alpine
+FROM node:22-alpine
 
 WORKDIR /app
 
-# Kopiujemy całość — projekt nie ma etapu budowania ani zależności
+# Zależności osobno od kodu: dopóki package.json się nie zmienia,
+# ta warstwa zostaje w pamięci podręcznej i kolejne wdrożenia są szybsze.
+COPY package*.json ./
+RUN npm ci --omit=dev
+
 COPY . .
 
-# Ścieżka bazy poza kodem aplikacji, na dysku trwałym
-ENV RP_DB=/data/rublya.db
-ENV PORT=8080
 ENV NODE_ENV=production
-
+ENV PORT=8080
 EXPOSE 8080
 
-# Katalog na bazę musi istnieć, zanim wystartuje serwer — przy pierwszym
-# uruchomieniu wolumen bywa pusty
-CMD ["sh", "-c", "mkdir -p /data && node server/server.js"]
+CMD ["node", "server/server.js"]

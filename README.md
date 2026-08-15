@@ -2,33 +2,47 @@
 
 Aplikacja do nauki rosyjskiego dla polskiego użytkownika. Ponad 1500 słówek, dziewięć modułów gramatyki, dwa egzaminy, tłumaczenie zdań w obie strony i trener klawiatury ЙЦУКЕН.
 
-Postęp zapisuje się na koncie w bazie SQLite, więc naukę zaczętą na komputerze kończysz na telefonie i odwrotnie.
+Postęp zapisuje się na koncie w bazie MySQL, więc naukę zaczętą na komputerze kończysz na telefonie i odwrotnie.
 
 ---
 
 ## Czego potrzebujesz
 
-**Node.js w wersji 24 lub nowszej** — [nodejs.org](https://nodejs.org), wariant LTS, instalacja z opcjami domyślnymi.
+**Node.js 20 lub nowszy** — [nodejs.org](https://nodejs.org), wariant LTS.
 
-Node trzyma bazę z kontami. Bez niego aplikacja nie ruszy, bo nie ma skąd wczytać postępu.
+**Baza MySQL** — dowolna, byle przyjmowała połączenia z zewnątrz. Aplikacja sama zakłada w niej tabele przy pierwszym uruchomieniu.
 
-Poza Node — nic. Zero paczek z npm, zero budowania. Baza to SQLite wbudowany w Node (`node:sqlite`), hasła liczy `node:crypto`, serwer stoi na `node:http`. Jeśli masz starszego Node i nie chcesz go podnosić, doinstaluj sterownik: `npm install better-sqlite3` — aplikacja sama go wykryje.
+Jedna zależność z npm: `mysql2`. Poza tym nic — zero budowania, zero narzędzi, front to zwykłe pliki.
 
 ---
 
 ## Uruchomienie
 
-**Windows, najprościej**
-
-Dwuklik w `Uruchom aplikacje.bat`. Wystartuje serwer i otworzy się okno bez paska adresu — wygląda jak zwykły program. Jeśli brakuje Node, plik powie o tym wprost.
-
-**Z wiersza poleceń**
+**Raz, na początku**
 
 ```bash
-node server/server.js
+npm install
 ```
 
-Aplikacja czeka pod `http://localhost:8080`. Inny port: `--port 3000`.
+Skopiuj `.env.example` na `.env` i wpisz dane swojej bazy:
+
+```
+MYSQL_URL=mysql://uzytkownik:haslo@serwer:3306/nazwa_bazy
+```
+
+Jeśli hasło zawiera `@`, `:`, `/`, `#` albo `%`, użyj zamiast tego osobnych zmiennych `DB_HOST`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` — wtedy nic nie trzeba kodować.
+
+**Plik `.env` nigdy nie trafia do repozytorium.** Pilnuje tego `.gitignore` i jest to jedyna rzecz w tym projekcie, której naprawdę nie wolno stamtąd wypuścić.
+
+**Codziennie**
+
+Dwuklik w `Uruchom aplikacje.bat`, albo:
+
+```bash
+npm start
+```
+
+Aplikacja czeka pod `http://localhost:8080`. Inny port: `node server/server.js --port 3000`.
 
 Przy pierwszym uruchomieniu zakładasz konto — login i hasło co najmniej ośmioznakowe. Nic poza tym nie jest potrzebne: żadnego e-maila, żadnego potwierdzania.
 
@@ -59,7 +73,9 @@ Do samej ikony i pełnego ekranu wystarczy `manifest.webmanifest` — nie trzeba
 
 ## Konta i baza
 
-Wszystko, co aplikacja o Tobie wie, siedzi w jednym pliku: `server/data/rublya.db`. Przeglądarka nie trzyma niczego — ani w `localStorage`, ani nigdzie indziej.
+Wszystko, co aplikacja o Tobie wie, siedzi w bazie MySQL. Przeglądarka nie trzyma niczego — ani w `localStorage`, ani nigdzie indziej.
+
+Tabele powstają same przy pierwszym uruchomieniu, nie trzeba niczego importować.
 
 **Tabele**
 
@@ -76,7 +92,7 @@ Wszystko, co aplikacja o Tobie wie, siedzi w jednym pliku: `server/data/rublya.d
 
 **Zapis** nie leci po każdym kliknięciu — zmiany sklejają się i wędrują do bazy po siedmiuset milisekundach ciszy. Przy zamykaniu karty zaległości dosyła `sendBeacon`. Kropka w prawym górnym rogu pokazuje, czy postęp faktycznie doszedł: zielona znaczy zapisano, bursztynowa — w drodze, czerwona — serwer nie odpowiada.
 
-**Kopia zapasowa** to skopiowanie pliku `rublya.db`. Nic więcej.
+**Kopia zapasowa** to zrzut bazy z panelu Twojego dostawcy albo `mysqldump`. Można też wejść w *Ustawienia → Zapisz kopię* i pobrać własny postęp jako plik JSON.
 
 ---
 
@@ -96,26 +112,32 @@ Do nauki po domu wystarczy. Żeby aplikacja zachowywała się na telefonie jak a
 
 ### Gdzie to postawić
 
-**Najprościej i za darmo: tunel Cloudflare.** Serwer zostaje na Twoim komputerze, a tunel daje mu publiczny adres HTTPS. Nic nie trzeba otwierać w routerze, baza nie opuszcza dysku.
+Baza jest zewnętrzna, więc serwer aplikacji **nie potrzebuje dysku trwałego** — można go wyrzucić i odtworzyć, nic się nie traci. To otwiera darmowe plany, które przy SQLite odpadały.
+
+**Render, plan darmowy** — gotowy `render.yaml` leży w repozytorium.
+
+1. *New → Web Service*, wskaż to repozytorium
+2. Render wczyta `render.yaml` sam
+3. W *Environment* dodaj jedną zmienną: `MYSQL_URL` z adresem swojej bazy
+4. Deploy
+
+Dostajesz `https://nazwa.onrender.com` z certyfikatem w komplecie. Darmowy plan usypia po 15 minutach bezczynności, więc pierwsze wejście po przerwie trwa kilkadziesiąt sekund.
+
+Działa tak samo na Railway, Fly.io czy zwykłym VPS — `Dockerfile` jest w repozytorium, a jedyne, co trzeba podać, to `MYSQL_URL`.
+
+**Do szybkiego sprawdzenia z telefonu**, bez wdrażania czegokolwiek:
 
 ```bash
 cloudflared tunnel --url http://localhost:8080
 ```
 
-Wypisze adres w rodzaju `https://cos-tam.trycloudflare.com`. Wchodzisz nim z telefonu i dopiero wtedy dostajesz prawdziwe PWA. Warunek: komputer musi być włączony. Adres bez konta jest losowy i znika po zamknięciu tunelu; darmowe konto Cloudflare pozwala przypiąć stały.
-
-**Jeśli ma działać bez Twojego komputera**, potrzebny jest hosting z **dyskiem trwałym** — SQLite to plik, a serwis dający przy każdym wdrożeniu czysty system plików skasuje wszystkie konta:
-
-| usługa | uwagi |
-|---|---|
-| **Fly.io** | wolumeny (`fly volumes`) podpięte pod `server/data`, rozliczenie od zużycia |
-| **Railway** | obsługuje dysk trwały, model płatny od zużycia |
-| **VPS** | pełna kontrola, `node server/server.js` pod procesem nadzorującym |
-| **Render — darmowy plan** | **nie nadaje się**: dyski trwałe są tylko w planach płatnych, więc baza znika przy każdym restarcie, a usługa usypia po 15 minutach bezczynności |
-
-Komenda startowa wszędzie ta sama: `npm start`. Port bierze się ze zmiennej `PORT`, którą hostingi ustawiają same. Ścieżkę bazy można przenieść zmienną `RP_DB`.
+Daje adres HTTPS prosto do serwera na Twoim komputerze.
 
 Po HTTPS ciasteczko sesji samo dostaje flagę `Secure` — nic nie trzeba przestawiać.
+
+### HTTPS to nie ozdoba
+
+Service worker rejestruje się **wyłącznie w bezpiecznym kontekście**: po HTTPS albo na `localhost`. Adres w sieci domowej, taki jak `http://192.168.1.15:8080`, bezpieczny nie jest — na telefonie wchodzącym pod ten adres service worker nie wystartuje, a Safari potrafi wtedy przeładowywać stronę w trakcie korzystania.
 
 ---
 
@@ -188,9 +210,11 @@ sw.js                       cache szkieletu aplikacji
 package.json                skrypty uruchomieniowe
 
 server/server.js            serwer HTTP, API, pliki statyczne
-server/db.js                SQLite: sterownik, schemat, zapytania
+server/db.js                MySQL: połączenie, schemat, zapytania
 server/auth.js              hasła scrypt, sesje, ciasteczka
-server/data/rublya.db      baza (nie trafia do repozytorium)
+.env                        dane dostępowe do bazy (nie trafia do repozytorium)
+.env.example                wzór do skopiowania
+render.yaml                 gotowa konfiguracja wdrożenia
 
 css/app.css                 warstwa wizualna
 icons/                      ikony aplikacji

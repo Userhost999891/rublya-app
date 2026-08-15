@@ -17,7 +17,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const os = require('node:os');
 
-const { q, driver, DB_FILE } = require('./db');
+const { q, driver, init } = require('./db');
 const A = require('./auth');
 
 const ROOT = path.join(__dirname, '..');
@@ -207,7 +207,7 @@ async function api(req, res, route) {
     if (out.error) return json(res, out.status, { error: out.error });
 
     clearTries(ip);
-    const token = A.startSession(out.user.id);
+    const token = await A.startSession(out.user.id);
     return json(res, 200, { user: A.publicUser(out.user) }, { 'Set-Cookie': A.cookieHeader(token, req) });
   }
 
@@ -222,13 +222,13 @@ async function api(req, res, route) {
     if (out.error) return json(res, out.status, { error: out.error });
 
     clearTries(ip);
-    const token = A.startSession(out.user.id);
+    const token = await A.startSession(out.user.id);
     return json(res, 200, { user: A.publicUser(out.user) }, { 'Set-Cookie': A.cookieHeader(token, req) });
   }
 
   /* --- wylogowanie --- */
   if (route === 'logout' && method === 'POST') {
-    A.endSession(A.readCookie(req, A.COOKIE));
+    await A.endSession(A.readCookie(req, A.COOKIE));
     return json(res, 200, { ok: true }, { 'Set-Cookie': A.clearCookieHeader() });
   }
 
@@ -238,22 +238,22 @@ async function api(req, res, route) {
      koncie odsyłamy od razu komplet, żeby wejście trwało jedno
      odbicie od serwera zamiast dwóch. */
   if (route === 'me' && method === 'GET') {
-    const u = A.currentUser(req);
+    const u = await A.currentUser(req);
     if (!u) return json(res, 200, { user: null, dane: null });
 
-    const row = q.getProgress.get(u.id);
+    const row = await q.getProgress(u.id);
     let dane = null;
     if (row) { try { dane = JSON.parse(row.dane); } catch (e) { dane = null; } }
     return json(res, 200, { user: A.publicUser(u), dane, rev: row ? row.rev : 0 });
   }
 
   /* Wszystko poniżej wymaga konta. */
-  const user = A.currentUser(req);
+  const user = await A.currentUser(req);
   if (!user) return json(res, 401, { error: 'Nie zalogowano' });
 
   /* --- odczyt postępu --- */
   if (route === 'state' && method === 'GET') {
-    const row = q.getProgress.get(user.id);
+    const row = await q.getProgress(user.id);
     if (!row) return json(res, 200, { dane: null, rev: 0 });
     let dane = null;
     try { dane = JSON.parse(row.dane); } catch (e) { dane = null; }
@@ -269,10 +269,10 @@ async function api(req, res, route) {
     if (!body || typeof body.dane !== 'object' || body.dane === null) {
       return json(res, 400, { error: 'Brak stanu do zapisania.' });
     }
-    q.putProgress.run(user.id, JSON.stringify(body.dane), Date.now());
-    q.touchUser.run(Date.now(), user.id);
-    const row = q.getProgress.get(user.id);
-    return json(res, 200, { ok: true, rev: row.rev });
+    await q.putProgress(user.id, JSON.stringify(body.dane), Date.now());
+    await q.touchUser(Date.now(), user.id);
+    const row = await q.getProgress(user.id);
+    return json(res, 200, { ok: true, rev: row ? row.rev : 1 });
   }
 
   /* --- dziennik odpowiedzi (statystyki długoterminowe) --- */
@@ -281,7 +281,7 @@ async function api(req, res, route) {
     try { body = await readJson(req); } catch (e) { return json(res, 400, { error: 'Nieczytelne dane.' }); }
     const list = Array.isArray(body.lista) ? body.lista.slice(0, 500) : [];
     for (const a of list) {
-      q.logAnswer.run(user.id, +a.ts || Date.now(), a.ok ? 1 : 0, a.temat ? String(a.temat).slice(0, 40) : null);
+      await q.logAnswer(user.id, +a.ts || Date.now(), a.ok ? 1 : 0, a.temat ? String(a.temat).slice(0, 40) : null);
     }
     return json(res, 200, { ok: true, zapisano: list.length });
   }
@@ -289,7 +289,7 @@ async function api(req, res, route) {
   /* --- usunięcie konta wraz z postępem --- */
   if (route === 'account' && method === 'DELETE') {
     /* ON DELETE CASCADE sprząta sesje, postęp i dziennik odpowiedzi. */
-    q.dropUser.run(user.id);
+    await q.dropUser(user.id);
     return json(res, 200, { ok: true }, { 'Set-Cookie': A.clearCookieHeader() });
   }
 
@@ -354,34 +354,62 @@ const server = http.createServer((req, res) => {
   serveStatic(req, res, pathname);
 });
 
-server.listen(PORT, HOST, () => {
-  const line = (t, c) => console.log(c ? '\x1b[' + c + 'm' + t + '\x1b[0m' : t);
-  console.log('');
-  line('  RUBLYA  ₽', '33');
-  line('  baza: ' + DB_FILE, '90');
-  line('  sterownik: ' + driver + '  ·  kont w bazie: ' + q.countUsers.get().n, '90');
-  console.log('');
-  line('  Na tym komputerze:', '90');
-  line('    http://localhost:' + PORT, '32');
+const line = (t, c) => console.log(c ? '\x1b[' + c + 'm' + t + '\x1b[0m' : t);
 
-  if (HOST === '0.0.0.0') {
-    console.log('');
-    line('  Na telefonie w tej samej sieci Wi-Fi:', '90');
-    const nets = os.networkInterfaces();
-    for (const name of Object.keys(nets)) {
-      for (const n of nets[name] || []) {
-        if (n.family === 'IPv4' && !n.internal) line('    http://' + n.address + ':' + PORT, '36');
-      }
+/* Najpierw baza, dopiero potem nasłuch. Odwrotna kolejność wpuszczałaby
+   ruch, zanim istnieją tabele — pierwsze wejście dostawałoby błąd
+   serwera zamiast ekranu logowania. */
+async function start() {
+  try {
+    await init();
+  } catch (e) {
+    console.error('');
+    console.error('  Nie udało się połączyć z bazą MySQL.');
+    console.error('  ' + (e.message || e));
+    console.error('');
+    if (e.code === 'ER_ACCESS_DENIED_ERROR') {
+      console.error('  Baza odrzuciła login lub hasło — sprawdź dane w .env.');
+    } else if (e.code === 'ENOTFOUND' || e.code === 'ETIMEDOUT' || e.code === 'ECONNREFUSED') {
+      console.error('  Serwer bazy nie odpowiada. Sprawdź adres i port, a u dostawcy —');
+      console.error('  czy baza w ogóle przyjmuje połączenia z zewnątrz.');
     }
-  } else {
-    console.log('');
-    line('  Telefon się nie połączy — serwer słucha tylko tego komputera.', '33');
-    line('  Chcesz go wpuścić? Uruchom z flagą --lan', '90');
+    console.error('');
+    process.exit(1);
   }
-  console.log('');
-  line('  Zatrzymanie: Ctrl+C', '90');
-  console.log('');
-});
+
+  let ilu = '?';
+  try { ilu = await q.countUsers(); } catch (e) { /* nieistotne dla startu */ }
+
+  server.listen(PORT, HOST, () => {
+    console.log('');
+    line('  RUBLYA  ₽', '33');
+    line('  ' + driver, '90');
+    line('  kont w bazie: ' + ilu, '90');
+    console.log('');
+    line('  Na tym komputerze:', '90');
+    line('    http://localhost:' + PORT, '32');
+
+    if (HOST === '0.0.0.0') {
+      console.log('');
+      line('  Na telefonie w tej samej sieci Wi-Fi:', '90');
+      const nets = os.networkInterfaces();
+      for (const name of Object.keys(nets)) {
+        for (const n of nets[name] || []) {
+          if (n.family === 'IPv4' && !n.internal) line('    http://' + n.address + ':' + PORT, '36');
+        }
+      }
+    } else {
+      console.log('');
+      line('  Telefon się nie połączy — serwer słucha tylko tego komputera.', '33');
+      line('  Chcesz go wpuścić? Uruchom z flagą --lan', '90');
+    }
+    console.log('');
+    line('  Zatrzymanie: Ctrl+C', '90');
+    console.log('');
+  });
+}
+
+start();
 
 server.on('error', (err) => {
   console.error('');

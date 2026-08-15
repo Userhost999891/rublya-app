@@ -1,0 +1,34 @@
+# ============================================================
+#  Rublya — wdrożenie na Render
+#
+#  Dane siedzą w zewnętrznym MySQL, więc usługa nie potrzebuje dysku
+#  trwałego. To właśnie dlatego darmowy plan tutaj wystarcza: Render
+#  kasuje pliki przy każdym wdrożeniu, ale nie ma czego kasować.
+#
+#  Hasła do bazy w tym pliku NIE MA i mieć nie może — plik leży
+#  w publicznym repozytorium. Zmienne oznaczone `sync: false`
+#  wpisujesz raz ręcznie w panelu Render, przy pierwszym wdrożeniu.
+# ============================================================
+
+services:
+  - type: web
+    name: rublya
+    runtime: node
+    plan: free
+    region: frankfurt          # najbliżej Polski z tego, co Render oferuje
+    buildCommand: npm ci --omit=dev
+    startCommand: node server/server.js
+    healthCheckPath: /api/me   # odpowiada bez logowania, więc nadaje się na sondę
+
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+
+      # Adres bazy razem z hasłem. Wpisz go w panelu:
+      # Dashboard → usługa → Environment → Add Environment Variable
+      # Kształt: mysql://uzytkownik:haslo@serwer:port/nazwa_bazy
+      - key: MYSQL_URL
+        sync: false
+
+      # PORT ustawia Render sam i to on decyduje, na czym nasłuchujesz —
+      # nie nadpisuj go własną wartością.

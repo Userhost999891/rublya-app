@@ -90,31 +90,32 @@ async function register(login, pass) {
   const nazwa = login.trim();
   const key = nazwa.toLowerCase();
 
-  if (q.userByLogin.get(key)) {
+  if (await q.userByLogin(key)) {
     return { error: 'Ten login jest już zajęty.', status: 409 };
   }
 
   const hash = await hashPassword(pass);
-  let info;
+  let id;
   try {
-    info = q.createUser.run(key, nazwa, hash, Date.now());
+    id = await q.createUser(key, nazwa, hash, Date.now());
   } catch (e) {
     /* Wyścig: ktoś zdążył zająć login między sprawdzeniem a zapisem.
-       UNIQUE w bazie jest tu ostatnim i rozstrzygającym słowem. */
-    if (String(e.message).includes('UNIQUE')) {
+       Klucz UNIQUE w bazie jest tu ostatnim i rozstrzygającym słowem.
+       MySQL zgłasza to jako ER_DUP_ENTRY. */
+    if (e.code === 'ER_DUP_ENTRY' || String(e.message).includes('Duplicate entry')) {
       return { error: 'Ten login jest już zajęty.', status: 409 };
     }
     throw e;
   }
 
-  return { user: q.userById.get(Number(info.lastInsertRowid)) };
+  return { user: await q.userById(id) };
 }
 
 async function login(loginRaw, pass) {
   if (typeof loginRaw !== 'string' || typeof pass !== 'string') {
     return { error: 'Brakuje loginu albo hasła.', status: 400 };
   }
-  const user = q.userByLogin.get(loginRaw.trim().toLowerCase());
+  const user = await q.userByLogin(loginRaw.trim().toLowerCase());
 
   /* Gdy loginu nie ma, i tak liczymy hash na atrapie. Inaczej czas
      odpowiedzi zdradzałby, które konta istnieją. */
@@ -126,7 +127,7 @@ async function login(loginRaw, pass) {
   const ok = await verifyPassword(pass, user.hash);
   if (!ok) return { error: 'Zły login lub hasło.', status: 401 };
 
-  q.touchUser.run(Date.now(), user.id);
+  await q.touchUser(Date.now(), user.id);
   return { user };
 }
 
@@ -134,24 +135,24 @@ async function login(loginRaw, pass) {
    Sesje
    ------------------------------------------------------------ */
 
-function startSession(userId) {
+async function startSession(userId) {
   const token = crypto.randomBytes(32).toString('base64url');
   const now = Date.now();
-  q.createSession.run(token, userId, now, now + SESSION_DAYS * 86400e3);
+  await q.createSession(token, userId, now, now + SESSION_DAYS * 86400e3);
   return token;
 }
 
-function endSession(token) {
-  if (token) q.dropSession.run(token);
+async function endSession(token) {
+  if (token) await q.dropSession(token);
 }
 
 /* Zwraca użytkownika albo null. Wygasłą sesję od razu kasuje. */
-function userFromToken(token) {
+async function userFromToken(token) {
   if (!token) return null;
-  const s = q.sessionByToken.get(token);
+  const s = await q.sessionByToken(token);
   if (!s) return null;
-  if (s.wygasa < Date.now()) { q.dropSession.run(token); return null; }
-  return q.userById.get(s.user_id) || null;
+  if (s.wygasa < Date.now()) { await q.dropSession(token); return null; }
+  return (await q.userById(s.user_id)) || null;
 }
 
 function readCookie(req, name) {
@@ -188,6 +189,8 @@ function clearCookieHeader() {
   return COOKIE + '=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0';
 }
 
+/* Asynchroniczne, bo sprawdzenie sesji to teraz zapytanie do bazy.
+   Każde wywołanie w server.js musi mieć `await`. */
 function currentUser(req) {
   return userFromToken(readCookie(req, COOKIE));
 }
